@@ -1,0 +1,209 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinet Heat Dissipation Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 48%;
+            padding: 12px;
+            font-size: 18px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+        button.reset {
+            background-color: #dc3545;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.reset:hover {
+            background-color: #c82333;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f1f8ff;
+            border-left: 6px solid #007bff;
+            border-radius: 8px;
+            display: none;
+        }
+        .output h2 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .output p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #28a745;
+        }
+        .failure {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cabinet Heat Dissipation Calculator</h1>
+        <form id="calculator-form">
+            <div class="form-group">
+                <label for="power_dissipation">Power Dissipation (W):</label>
+                <input type="number" id="power_dissipation" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="ambient_temp">Ambient Temperature (°C):</label>
+                <input type="number" id="ambient_temp" required>
+            </div>
+            <div class="form-group">
+                <label for="internal_temp_max">Max Internal Temperature (°C):</label>
+                <input type="number" id="internal_temp_max" required>
+            </div>
+            <div class="form-group">
+                <label for="length">Cabinet Length (m):</label>
+                <input type="number" id="length" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="width">Cabinet Width (m):</label>
+                <input type="number" id="width" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="height">Cabinet Height (m):</label>
+                <input type="number" id="height" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="thickness">Wall Thickness (m):</label>
+                <input type="number" id="thickness" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="material">Material:</label>
+                <select id="material">
+                    <option value="mild_steel">Mild Steel</option>
+                    <option value="polycarbonate">Polycarbonate</option>
+                    <option value="abs">ABS</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ip_rating">IP Rating:</label>
+                <select id="ip_rating">
+                    <option value="IP67">IP67</option>
+                    <option value="IP54">IP54</option>
+                    <option value="IP42">IP42</option>
+                </select>
+            </div>
+            <button type="button" onclick="calculateHeatDissipation()">Calculate</button>
+            <button type="button" class="reset" onclick="resetForm()">Reset</button>
+        </form>
+        <div id="output" class="output"></div>
+    </div>
+
+    <script>
+        const materials = {
+            mild_steel: { thermal_conductivity: 50, emissivity: 0.7 },
+            polycarbonate: { thermal_conductivity: 0.2, emissivity: 0.9 },
+            abs: { thermal_conductivity: 0.17, emissivity: 0.94 }
+        };
+        const stefanBoltzmannConstant = 5.67e-8;
+
+        function calculateHeatDissipation() {
+            const powerDissipation = parseFloat(document.getElementById('power_dissipation').value);
+            const ambientTemp = parseFloat(document.getElementById('ambient_temp').value);
+            const internalTempMax = parseFloat(document.getElementById('internal_temp_max').value);
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const thickness = parseFloat(document.getElementById('thickness').value);
+            const materialChoice = document.getElementById('material').value;
+            const ipRating = document.getElementById('ip_rating').value;
+
+            const material = materials[materialChoice];
+            const thermalConductivity = material.thermal_conductivity;
+            const emissivity = material.emissivity;
+
+            const surfaceArea = 2 * (length * width + length * height + width * height);
+            const deltaTemp = internalTempMax - ambientTemp;
+
+            const qConduction = (thermalConductivity * surfaceArea * deltaTemp) / thickness;
+
+            let convectionCoefficient;
+            if (ipRating === 'IP67') convectionCoefficient = 5;
+            else if (ipRating === 'IP54') convectionCoefficient = 10;
+            else if (ipRating === 'IP42') convectionCoefficient = 15;
+
+            const qConvection = convectionCoefficient * surfaceArea * deltaTemp;
+
+            const internalTempK = internalTempMax + 273.15;
+            const ambientTempK = ambientTemp + 273.15;
+            const qRadiation = emissivity * stefanBoltzmannConstant * surfaceArea * (Math.pow(internalTempK, 4) - Math.pow(ambientTempK, 4));
+
+            const totalHeatTransfer = qConduction + qConvection + qRadiation;
+
+            let outputMessage = `<h2>Heat Transfer Breakdown:</h2>`;
+            outputMessage += `<p>Conduction: <strong>${qConduction.toFixed(2)} W</strong></p>`;
+            outputMessage += `<p>Convection: <strong>${qConvection.toFixed(2)} W</strong></p>`;
+            outputMessage += `<p>Radiation: <strong>${qRadiation.toFixed(2)} W</strong></p>`;
+            outputMessage += `<p>Total Heat Dissipation Capability: <strong>${totalHeatTransfer.toFixed(2)} W</strong></p>`;
+
+            if (totalHeatTransfer >= powerDissipation) {
+                outputMessage += `<p class="success"><strong>Sufficient heat dissipation.</strong></p>`;
+            } else {
+                outputMessage += `<p class="failure"><strong>Insufficient heat dissipation. Consider improving design or material.</strong></p>`;
+            }
+
+            document.getElementById('output').innerHTML = outputMessage;
+            document.getElementById('output').style.display = 'block';
+        }
+
+        function resetForm() {
+            document.getElementById('calculator-form').reset();
+            document.getElementById('output').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
